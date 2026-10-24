@@ -1,0 +1,6 @@
+{
+  "name": "رمز | RAMZ للبرمجة والتطوير",
+  "description": "موقع رمز (RAMZ) للبرمجة وتطوير المواقع والأنظمة وقواعد البيانات، مع متجر خدمات ولوحة إدارة حقيقية مشتركة بين الأجهزة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
