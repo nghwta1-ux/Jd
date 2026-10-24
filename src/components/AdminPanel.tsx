@@ -90,6 +90,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const newOrdersCount = orders.filter(o => o.status === 'new').length;
   const previousOrdersCount = orders.filter(o => o.status === 'completed' || o.status === 'cancelled').length;
 
+  // Helper to convert Eastern Arabic numerals (٠-٩) and localized decimal separators (٫ ,) to standard ASCII
+  const normalizeNumericInput = (str: string): string => {
+    const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    let res = str || '';
+    for (let i = 0; i < 10; i++) {
+      res = res.replaceAll(arabicDigits[i], i.toString());
+      res = res.replaceAll(persianDigits[i], i.toString());
+    }
+    return res.replace(/٫|,/g, '.').trim();
+  };
+
+  // Helper to sanitize browser/Safari-level errors into clear Arabic messages
+  const sanitizeErrorMessage = (err: any): string => {
+    if (!err) return 'فشل حفظ المنتج. يرجى المحاولة مجدداً.';
+    const msg = typeof err === 'string' ? err : err.message || '';
+    if (msg.includes('string did not match the expected pattern') || msg.includes('Unexpected token') || msg.includes('JSON')) {
+      return 'تعذر إرسال البيانات بشكل صحيح إلى الخادم. يرجى إعادة المحاولة.';
+    }
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('Load failed')) {
+      return 'تعذر الاتصال بالخادم. يرجى التأكد من اتصالك بالإنترنت.';
+    }
+    return msg || 'حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مجدداً.';
+  };
+
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setProdError(null);
@@ -99,7 +124,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       return;
     }
 
-    const priceNum = parseFloat(newProdPrice);
+    const cleanPriceStr = normalizeNumericInput(newProdPrice);
+    const priceNum = parseFloat(cleanPriceStr);
     if (isNaN(priceNum) || priceNum < 1 || priceNum > 15.50) {
       setProdError('يجب أن يكون السعر بين 1 و 15.50 ر.س');
       return;
@@ -116,7 +142,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setNewProdDesc('');
       setNewProdPrice('');
     } catch (err: any) {
-      setProdError(err.message || 'فشل حفظ المنتج');
+      setProdError(sanitizeErrorMessage(err));
     } finally {
       setIsAddingProd(false);
     }
@@ -140,7 +166,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       return;
     }
 
-    const priceNum = parseFloat(editPrice);
+    const cleanPriceStr = normalizeNumericInput(editPrice);
+    const priceNum = parseFloat(cleanPriceStr);
     if (isNaN(priceNum) || priceNum < 1 || priceNum > 15.50) {
       setEditError('يجب أن يكون السعر بين 1 و 15.50 ر.س');
       return;
@@ -155,7 +182,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       });
       setEditingProduct(null);
     } catch (err: any) {
-      setEditError(err.message || 'فشل تعديل المنتج');
+      setEditError(sanitizeErrorMessage(err));
     } finally {
       setIsEditingProd(false);
     }

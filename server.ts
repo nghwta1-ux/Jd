@@ -220,13 +220,26 @@ app.get('/api/products', (req, res) => {
   res.json({ success: true, products: cleanProducts });
 });
 
+function parsePrice(input: any): number {
+  if (typeof input === 'number') return input;
+  let str = String(input ?? '');
+  const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  for (let i = 0; i < 10; i++) {
+    str = str.replaceAll(arabicDigits[i], i.toString());
+    str = str.replaceAll(persianDigits[i], i.toString());
+  }
+  str = str.replace(/٫|,/g, '.').trim();
+  return Number(str);
+}
+
 app.post('/api/products', (req, res) => {
   const { name, description, price, category } = req.body;
   if (!name || typeof name !== 'string' || name.trim() === '') {
     return res.status(400).json({ success: false, error: 'اسم المنتج مطلوب' });
   }
 
-  const numPrice = Number(price);
+  const numPrice = parsePrice(price);
   if (isNaN(numPrice) || numPrice < 1 || numPrice > 15.50) {
     return res.status(400).json({ success: false, error: 'يجب أن يكون السعر بين 1 و 15.50 ر.س' });
   }
@@ -273,7 +286,7 @@ app.put('/api/products/:id', (req, res) => {
   }
 
   if (price !== undefined) {
-    const numPrice = Number(price);
+    const numPrice = parsePrice(price);
     if (isNaN(numPrice) || numPrice < 1 || numPrice > 15.50) {
       return res.status(400).json({ success: false, error: 'يجب أن يكون السعر بين 1 و 15.50 ر.س' });
     }
